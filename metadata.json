@@ -1,0 +1,6 @@
+{
+  "name": "團隊任務追蹤器 (Task Tracker)",
+  "description": "一個使用 React、TypeScript、Tailwind CSS 和 Firebase 實現的團隊任務追蹤應用程式。使用者可以登入、建立、編輯、刪除和篩選任務。",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
