@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { HashRouter } from 'react-router-dom'; // Removed Routes, Route as they are not used for SPA without path changes
 import Navbar from './components/Navbar';
@@ -6,6 +5,7 @@ import TaskList from './components/TaskList';
 import TaskForm from './components/TaskForm';
 import ConfirmationModal from './components/ConfirmationModal';
 import LoadingSpinner from './components/LoadingSpinner';
+import TaskDetailModal from './components/TaskDetailModal';
 import { useAuth } from './hooks/useAuth';
 import { Task, Member } from './types';
 import { 
@@ -27,6 +27,8 @@ const App: React.FC = () => {
   const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
   const [filterAssigneeId, setFilterAssigneeId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     setIsLoadingTasks(true);
@@ -140,7 +142,7 @@ const App: React.FC = () => {
   
   return (
     <HashRouter>
-      <div className="min-h-screen flex flex-col bg-gray-50"> {/* Slightly lighter gray */}
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <Navbar onCreateTask={handleOpenCreateTaskForm} />
         <main className="flex-grow container mx-auto p-4 md:p-6 lg:p-8">
           {error && (
@@ -162,6 +164,7 @@ const App: React.FC = () => {
               filterAssigneeId={filterAssigneeId}
               setFilterAssigneeId={setFilterAssigneeId}
               isAdmin={isAdmin}
+              onViewDetail={(task) => { setSelectedTask(task); setIsTaskDetailOpen(true); }}
             />
           )}
         </main>
@@ -170,6 +173,12 @@ const App: React.FC = () => {
           onClose={handleCloseTaskForm}
           onSubmit={handleSubmitTaskForm}
           initialTask={editingTask}
+          members={members}
+        />
+        <TaskDetailModal
+          isOpen={isTaskDetailOpen}
+          task={selectedTask}
+          onClose={() => setIsTaskDetailOpen(false)}
           members={members}
         />
         <ConfirmationModal
