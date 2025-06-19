@@ -88,11 +88,11 @@ const TaskList: React.FC<TaskListProps> = ({
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">優先級</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">負責人</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">狀態</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">開始日期</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">截止日期</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">產品</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">任務類型</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider max-w-xs">備註</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell">開始日期</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">截止日期</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell">產品</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden xl:table-cell">任務類型</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider max-w-xs hidden 2xl:table-cell">備註</th>
                 {isAdmin && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">操作</th>}
               </tr>
             </thead>
@@ -111,15 +111,13 @@ const TaskList: React.FC<TaskListProps> = ({
                   <td className={`px-4 py-3 whitespace-nowrap text-sm ${getPriorityClass(task.priority)}`}>{task.priority}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>
-                      {task.status}
-                    </span>
+                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{task.status}</span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{formatDate(task.startDate)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{formatDate(task.dueDate)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.product}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.taskType}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">{task.product}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{task.taskType}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate hidden 2xl:table-cell" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
                   {isAdmin && (
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-3" onClick={e => e.stopPropagation()}>
                       <button onClick={() => onEdit(task)} className="text-blue-600 hover:text-blue-800 transition-colors duration-150" title="編輯">
