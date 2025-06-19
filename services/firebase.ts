@@ -1,4 +1,3 @@
-
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -82,12 +81,35 @@ export const onTasksSnapshot = (
   }, onError);
 };
 
+// 定義 TaskInput 型別，包含所有欄位
+export type TaskInput = {
+  title: string;
+  description?: string;
+  gitIssueUrl?: string;
+  assigneeId?: string;
+  startDate?: Timestamp | null;
+  dueDate?: Timestamp | null;
+  priority: '高' | '中' | '低';
+  status: '待安排' | '進行中' | '已完成' | '測試中' | '待Merge';
+  product: 'XQ' | 'XQNext' | 'XT';
+  taskType: 'Spec' | 'Bug' | '普測' | '文件' | '客服信件';
+  notes?: string;
+};
 
-export const createTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'assigneeName'>): Promise<string> => {
+// 建立任務
+export const createTask = async (taskData: TaskInput): Promise<string> => {
   const docRef = await addDoc(collection(db, TASKS_COLLECTION), {
-    ...taskData,
+    title: taskData.title,
+    description: taskData.description || '',
+    gitIssueUrl: taskData.gitIssueUrl || '',
+    assigneeId: taskData.assigneeId || '',
     startDate: taskData.startDate || null,
     dueDate: taskData.dueDate || null,
+    priority: taskData.priority,
+    status: taskData.status,
+    product: taskData.product,
+    taskType: taskData.taskType,
+    notes: taskData.notes || '',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -96,11 +118,15 @@ export const createTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'upda
 
 export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'assigneeName'>>): Promise<void> => {
   const taskRef = doc(db, TASKS_COLLECTION, taskId);
-  // Ensure dates are Timestamps or null
+  // 將 undefined 欄位轉為空字串或 null，避免 Firestore 拋錯
   const dataToUpdate: Partial<Task> = { ...taskData };
-  if (taskData.startDate === undefined) dataToUpdate.startDate = null;
-  if (taskData.dueDate === undefined) dataToUpdate.dueDate = null;
-  
+  if (dataToUpdate.description === undefined) dataToUpdate.description = '';
+  if (dataToUpdate.gitIssueUrl === undefined) dataToUpdate.gitIssueUrl = '';
+  if (dataToUpdate.assigneeId === undefined) dataToUpdate.assigneeId = '';
+  if (dataToUpdate.startDate === undefined) dataToUpdate.startDate = null;
+  if (dataToUpdate.dueDate === undefined) dataToUpdate.dueDate = null;
+  if (dataToUpdate.notes === undefined) dataToUpdate.notes = '';
+
   await updateDoc(taskRef, {
     ...dataToUpdate,
     updatedAt: serverTimestamp(),
