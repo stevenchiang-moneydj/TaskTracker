@@ -1,4 +1,3 @@
-
 import { Timestamp } from 'firebase/firestore';
 
 export enum Priority {
@@ -8,7 +7,6 @@ export enum Priority {
 }
 
 export enum Status {
-  TODO = "待辦",
   IN_PROGRESS = "進行中",
   DONE = "已完成",
   TESTING = "測試中",

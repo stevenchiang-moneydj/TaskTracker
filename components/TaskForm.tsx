@@ -159,7 +159,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
             <div>
               <label htmlFor="status" className={labelClass}>狀態 <span className="text-red-500">*</span></label>
               <select id="status" value={status} onChange={(e) => setStatus(e.target.value as Status)} className={inputClass}>
-                 {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                 {STATUS_OPTIONS.filter(s => s).map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           
