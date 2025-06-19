@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Task, Priority, Status, Product, TaskType, Member } from '../types';
 import { Timestamp } from '../services/firebase';
@@ -84,11 +83,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
     try {
       await onSubmit(taskData);
       onClose(); // Close form on successful submission
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to submit task:", err);
-      // Error is usually set by the parent component (App.tsx), 
-      // but we can set a generic one here if needed or re-throw.
-      setError("提交任務失敗，請稍後再試。");
+      // 顯示詳細錯誤訊息
+      setError(err?.message || String(err) || "提交任務失敗，請稍後再試。");
     } finally {
       setIsLoading(false);
     }
