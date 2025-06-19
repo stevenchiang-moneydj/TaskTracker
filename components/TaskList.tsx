@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Task, Member } from '../types';
 import { Timestamp } from '../services/firebase'; // Import Timestamp
 
@@ -13,6 +13,14 @@ interface TaskListProps {
   onViewDetail: (task: Task) => void;
 }
 
+const RESPONSIBLE_TABS = [
+  { key: 'all', label: '全部' },
+  { key: '耀頡', label: '耀頡' },
+  { key: '家銘', label: '家銘' },
+  { key: '韋辰', label: '韋辰' },
+  { key: '政澤', label: '政澤' },
+];
+
 const TaskList: React.FC<TaskListProps> = ({ 
   tasks, 
   members, 
@@ -23,6 +31,9 @@ const TaskList: React.FC<TaskListProps> = ({
   isAdmin,
   onViewDetail
 }) => {
+  const [activeMainTab] = useState('負責人'); // 目前僅一個大頁籤
+  const [activeSubTab, setActiveSubTab] = useState('all');
+  const [hideDone, setHideDone] = useState(false);
 
   const formatDate = (timestamp?: Timestamp | null): string => { // Use imported Timestamp type
     if (!timestamp) return '-';
@@ -56,48 +67,191 @@ const TaskList: React.FC<TaskListProps> = ({
     }
   };
 
-  return (
-    <div className="bg-white shadow-xl rounded-lg p-4 md:p-6 overflow-x-auto">
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <label htmlFor="assigneeFilter" className="block text-sm font-medium text-gray-700 mb-1 sm:mb-0">篩選負責人:</label>
-        <select
-          id="assigneeFilter"
-          value={filterAssigneeId || ''}
-          onChange={(e) => setFilterAssigneeId(e.target.value || null)}
-          className="w-full sm:w-auto p-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-        >
-          <option value="">所有負責人</option>
-          {members.map(member => (
-            <option key={member.id} value={member.id}>{member.displayName}</option>
-          ))}
-           <option value="unassigned">未分配</option>
-        </select>
-      </div>
+  // 依小頁籤篩選
+  let displayTasks: Task[] = tasks;
+  if (activeSubTab !== 'all') {
+    const member = members.find(m => m.displayName === activeSubTab);
+    displayTasks = member ? tasks.filter(t => t.assigneeId === member.id) : [];
+  }
+  if (hideDone) {
+    displayTasks = displayTasks.filter(t => t.status !== '已完成');
+  }
 
-      {filteredTasks.length === 0 ? (
-        <div className="text-center text-gray-500 py-12">
-          <i className="fas fa-tasks fa-3x mb-3 text-gray-400"></i>
-          <p className="text-xl">目前沒有符合條件的任務。</p>
-        </div>
+  // 分群顯示（全部）
+  const groupedTasks = members
+    .map(member => ({
+      member,
+      tasks: displayTasks.filter(t => t.assigneeId === member.id)
+    }))
+    .filter(group => group.tasks.length > 0);
+  const unassignedTasks = displayTasks.filter(t => !t.assigneeId);
+
+  // 共用表格欄寬設定
+  const TableColGroup = () => (
+    <colgroup>
+      <col /> {/* 標題 */}
+      <col style={{ width: 'auto' }} /> {/* 優先級 */}
+      <col style={{ width: 'auto' }} /> {/* 負責人 */}
+      <col /> {/* 狀態 */}
+      <col className="hidden md:table-column" /> {/* 開始日期 */}
+      <col className="hidden sm:table-column" /> {/* 截止日期 */}
+      <col className="hidden lg:table-column" /> {/* 產品 */}
+      <col className="hidden xl:table-column" /> {/* 任務類型 */}
+      <col className="hidden 2xl:table-column" /> {/* 備註 */}
+      {/* 操作欄不設寬度，讓其自適應 */}
+    </colgroup>
+  );
+
+  const TableHeader = ({ isAdmin }: { isAdmin: boolean }) => (
+    <thead className="bg-gray-50">
+      <tr>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">標題</th>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">優先級</th>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">負責人</th>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">狀態</th>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell">開始日期</th>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">截止日期</th>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell">產品</th>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden xl:table-cell">任務類型</th>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider max-w-xs hidden 2xl:table-cell">備註</th>
+        {isAdmin && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">操作</th>}
+      </tr>
+    </thead>
+  );
+
+  return (
+    <div className="bg-white shadow-xl rounded-lg p-4 md:p-6">
+      {/* 大頁籤 */}
+      <div className="mb-4 border-b border-gray-200">
+        <button className="px-4 py-2 text-blue-700 font-semibold border-b-2 border-blue-600 bg-white" disabled>
+          負責人
+        </button>
+      </div>
+      {/* 小頁籤 */}
+      <div className="mb-6 flex items-center space-x-2">
+        {RESPONSIBLE_TABS.map(tab => (
+          <button
+            key={tab.key}
+            className={`px-4 py-2 rounded-t-lg font-medium focus:outline-none transition-colors duration-150 ${activeSubTab === tab.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'}`}
+            onClick={() => setActiveSubTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+        {/* 隱藏已完成 checkbox */}
+        <label className="flex items-center ml-4 select-none text-sm text-gray-700">
+          <input
+            type="checkbox"
+            className="mr-1.5 accent-blue-600"
+            checked={hideDone}
+            onChange={e => setHideDone(e.target.checked)}
+          />
+          隱藏已完成
+        </label>
+      </div>
+      {/* 內容區 */}
+      {activeSubTab === 'all' ? (
+        <>
+          {groupedTasks.map(group => (
+            <div key={group.member.id} className="mb-8">
+              <div className="font-bold text-lg text-blue-700 mb-2">{group.member.displayName}</div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 mb-4">
+                  <TableColGroup />
+                  <TableHeader isAdmin={isAdmin} />
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {group.tasks.map((task) => (
+                      <tr key={task.id} className="hover:bg-blue-50 cursor-pointer transition-colors duration-150" onClick={() => onViewDetail(task)}>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-medium" onClick={e => e.stopPropagation()}>
+                          {task.gitIssueUrl ? (
+                            <a href={task.gitIssueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">
+                              {task.title} <i className="fas fa-external-link-alt fa-xs ml-1 opacity-70"></i>
+                            </a>
+                          ) : (
+                            task.title
+                          )}
+                        </td>
+                        <td className={`px-4 py-3 whitespace-nowrap text-sm ${getPriorityClass(task.priority)}`}>{task.priority}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{task.status}</span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">{task.product}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{task.taskType}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate hidden 2xl:table-cell" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
+                        {isAdmin && (
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-3" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => onEdit(task)} className="text-blue-600 hover:text-blue-800 transition-colors duration-150" title="編輯">
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button onClick={() => task.id && onDelete(task.id)} className="text-red-600 hover:text-red-800 transition-colors duration-150" title="刪除">
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+          {unassignedTasks.length > 0 && (
+            <div className="mb-8">
+              <div className="font-bold text-lg text-gray-500 mb-2">未分配</div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 mb-4">
+                  <TableColGroup />
+                  <TableHeader isAdmin={isAdmin} />
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {unassignedTasks.map((task) => (
+                      <tr key={task.id} className="hover:bg-blue-50 cursor-pointer transition-colors duration-150" onClick={() => onViewDetail(task)}>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-medium" onClick={e => e.stopPropagation()}>
+                          {task.gitIssueUrl ? (
+                            <a href={task.gitIssueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">
+                              {task.title} <i className="fas fa-external-link-alt fa-xs ml-1 opacity-70"></i>
+                            </a>
+                          ) : (
+                            task.title
+                          )}
+                        </td>
+                        <td className={`px-4 py-3 whitespace-nowrap text-sm ${getPriorityClass(task.priority)}`}>{task.priority}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{task.status}</span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">{task.product}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{task.taskType}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate hidden 2xl:table-cell" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
+                        {isAdmin && (
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-3" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => onEdit(task)} className="text-blue-600 hover:text-blue-800 transition-colors duration-150" title="編輯">
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button onClick={() => task.id && onDelete(task.id)} className="text-red-600 hover:text-red-800 transition-colors duration-150" title="刪除">
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 ">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">標題</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">優先級</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">負責人</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">狀態</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell">開始日期</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">截止日期</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell">產品</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden xl:table-cell">任務類型</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider max-w-xs hidden 2xl:table-cell">備註</th>
-                {isAdmin && <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">操作</th>}
-              </tr>
-            </thead>
+          <table className="min-w-full divide-y divide-gray-200">
+            <TableColGroup />
+            <TableHeader isAdmin={isAdmin} />
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTasks.map((task) => (
+              {displayTasks.map((task) => (
                 <tr key={task.id} className="hover:bg-blue-50 cursor-pointer transition-colors duration-150" onClick={() => onViewDetail(task)}>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-medium" onClick={e => e.stopPropagation()}>
                     {task.gitIssueUrl ? (
