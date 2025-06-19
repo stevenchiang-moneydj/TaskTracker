@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Task, Member } from '../types';
 import { Timestamp } from '../services/firebase'; // Import Timestamp
@@ -11,6 +10,7 @@ interface TaskListProps {
   filterAssigneeId: string | null;
   setFilterAssigneeId: (assigneeId: string | null) => void;
   isAdmin: boolean;
+  onViewDetail: (task: Task) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({ 
@@ -20,7 +20,8 @@ const TaskList: React.FC<TaskListProps> = ({
   onDelete, 
   filterAssigneeId, 
   setFilterAssigneeId,
-  isAdmin 
+  isAdmin,
+  onViewDetail
 }) => {
 
   const formatDate = (timestamp?: Timestamp | null): string => { // Use imported Timestamp type
@@ -97,8 +98,8 @@ const TaskList: React.FC<TaskListProps> = ({
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTasks.map((task) => (
-                <tr key={task.id} className="hover:bg-gray-50 transition-colors duration-150">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-medium">
+                <tr key={task.id} className="hover:bg-blue-50 cursor-pointer transition-colors duration-150" onClick={() => onViewDetail(task)}>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-medium" onClick={e => e.stopPropagation()}>
                     {task.gitIssueUrl ? (
                       <a href={task.gitIssueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">
                         {task.title} <i className="fas fa-external-link-alt fa-xs ml-1 opacity-70"></i>
@@ -120,7 +121,7 @@ const TaskList: React.FC<TaskListProps> = ({
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.taskType}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
                   {isAdmin && (
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-3">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-3" onClick={e => e.stopPropagation()}>
                       <button onClick={() => onEdit(task)} className="text-blue-600 hover:text-blue-800 transition-colors duration-150" title="編輯">
                         <i className="fas fa-edit"></i>
                       </button>
