@@ -22,7 +22,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { FIREBASE_CONFIG } from '../constants';
-import { Task, Member, FirebaseUser, Status } from '../types'; // Custom FirebaseUser type
+import { Task, Member, FirebaseUser, Status, Product } from '../types'; // 加入 Product
 
 const firebaseApp = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(firebaseApp);
@@ -107,7 +107,16 @@ export const getStatuses = async (): Promise<Status[]> => {
   }));
 };
 
-// 定義 TaskInput 型別，priority/status 均為 id
+// 取得所有產品，依 productNumber 排序
+export const getProducts = async (): Promise<Product[]> => {
+  const productsSnapshot = await getDocs(query(collection(db, 'product'), orderBy('productNumber', 'asc')));
+  return productsSnapshot.docs.map(docSnap => ({
+    id: docSnap.id,
+    ...(docSnap.data() as Omit<Product, 'id'>)
+  }));
+};
+
+// 定義 TaskInput 型別，priority/status/product 均為 id
 export type TaskInput = {
   title: string;
   description?: string;
@@ -117,7 +126,7 @@ export type TaskInput = {
   dueDate?: Timestamp | null;
   priority: string; // priorityId
   status: string;   // statusId
-  product: 'XQ' | 'XQNext' | 'XT';
+  product: string;  // productId
   taskType: 'Spec' | 'Bug' | '普測' | '文件' | '客服信件';
   notes?: string;
 };

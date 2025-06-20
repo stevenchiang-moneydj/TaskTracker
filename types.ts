@@ -7,10 +7,16 @@ export interface Status {
   statusNumber: number;
 }
 
-export enum Product {
-  XQ = "XQ",
-  XQNEXT = "XQNext",
-  XT = "XT",
+// export enum Product {
+//   XQ = "XQ",
+//   XQNEXT = "XQNext",
+//   XT = "XT",
+// }
+
+export interface Product {
+  id: string; // documentId
+  productName: string;
+  productNumber: number;
 }
 
 export enum TaskType {
@@ -37,7 +43,7 @@ export interface Task {
   dueDate?: Timestamp | null;
   priority: string; // priorityId
   status: string; // statusId
-  product: Product;
+  product: string; // productId
   taskType: TaskType;
   notes?: string;
   createdAt?: Timestamp;

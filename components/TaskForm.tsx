@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Task, Status as StatusType, Product, TaskType, Member } from '../types';
 import { Timestamp, Priority } from '../services/firebase';
-import { PRODUCT_OPTIONS, TASK_TYPE_OPTIONS } from '../constants';
+import { TASK_TYPE_OPTIONS } from '../constants';
 
 interface TaskFormProps {
   isOpen: boolean;
@@ -11,9 +11,10 @@ interface TaskFormProps {
   members: Member[];
   priorities: Priority[];
   statuses: StatusType[];
+  products: Product[];
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialTask, members, priorities, statuses }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialTask, members, priorities, statuses, products }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [gitIssueUrl, setGitIssueUrl] = useState('');
@@ -22,7 +23,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
   const [priority, setPriority] = useState<string>('');
   const [status, setStatus] = useState<string>('');
-  const [product, setProduct] = useState<Product>(Product.XQ);
+  const [product, setProduct] = useState<string>('');
   const [taskType, setTaskType] = useState<TaskType>(TaskType.SPEC);
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +39,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
       setDueDate(initialTask.dueDate ? initialTask.dueDate.toDate().toISOString().split('T')[0] : undefined);
       setPriority(initialTask.priority || '');
       setStatus(initialTask.status || (statuses[0]?.id || ''));
-      setProduct(initialTask.product);
+      setProduct(initialTask.product || (products[0]?.id || ''));
       setTaskType(initialTask.taskType);
       setNotes(initialTask.notes || '');
     } else {
@@ -55,12 +56,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
       // 預設選到 statusName 為「待安排」的 statusId
       const defaultStatus = statuses.find(s => s.statusName === '待安排');
       setStatus(defaultStatus ? defaultStatus.id : (statuses[0]?.id || ''));
-      setProduct(Product.XQ);
+      setProduct(products[0]?.id || '');
       setTaskType(TaskType.SPEC);
       setNotes('');
     }
     setError(null); // Clear previous errors when form opens or initialTask changes
-  }, [initialTask, isOpen, priorities, statuses]);
+  }, [initialTask, isOpen, priorities, statuses, products]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,8 +193,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
           
             <div>
               <label htmlFor="product" className={labelClass}>產品 <span className="text-red-500">*</span></label>
-              <select id="product" value={product} onChange={(e) => setProduct(e.target.value as Product)} className={inputClass}>
-                {PRODUCT_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+              <select id="product" value={product} onChange={e => setProduct(e.target.value)} className={inputClass} required>
+                {products.sort((a, b) => Number(a.productNumber) - Number(b.productNumber)).map(p => (
+                  <option key={p.id} value={p.id}>{p.productName}</option>
+                ))}
               </select>
             </div>
             <div>
