@@ -102,6 +102,36 @@ const TaskList: React.FC<TaskListProps> = ({
     return tt ? tt.typeName : '-';
   };
 
+  // 狀態與優先級排序依據
+  const statusOrder = ['進行中', '評估中', '待Merge', '測試中', '待安排', '追蹤', '已完成'];
+  const priorityOrder = ['緊急', '優先', '一般', '低', '擱置'];
+
+  function getStatusSortIndex(statusId: string) {
+    const s = statuses.find(s => s.id === statusId);
+    if (!s) return statusOrder.length;
+    const idx = statusOrder.indexOf(s.statusName);
+    return idx === -1 ? statusOrder.length : idx;
+  }
+  function getPrioritySortIndex(priorityId: string) {
+    const p = priorities.find(p => p.id === priorityId);
+    if (!p) return priorityOrder.length;
+    const idx = priorityOrder.indexOf(p.levelName);
+    return idx === -1 ? priorityOrder.length : idx;
+  }
+
+  function compareTasks(a: Task, b: Task) {
+    // 1. 狀態
+    const statusDiff = getStatusSortIndex(a.status) - getStatusSortIndex(b.status);
+    if (statusDiff !== 0) return statusDiff;
+    // 2. 優先級
+    const priorityDiff = getPrioritySortIndex(a.priority) - getPrioritySortIndex(b.priority);
+    if (priorityDiff !== 0) return priorityDiff;
+    // 3. 截止日遞減
+    const aDue = a.dueDate ? a.dueDate.toDate().getTime() : 0;
+    const bDue = b.dueDate ? b.dueDate.toDate().getTime() : 0;
+    return bDue - aDue;
+  }
+
   // 依小頁籤篩選
   let displayTasks: Task[] = tasks;
   if (activeSubTab !== 'all') {
@@ -109,12 +139,12 @@ const TaskList: React.FC<TaskListProps> = ({
     displayTasks = member ? tasks.filter(t => t.assigneeId === member.id) : [];
   }
   if (hideDone) {
-    // 取得 "已完成" status 的 id
+    // 取得 "已完成" 與 "停止" status 的 id
     const doneStatus = statuses.find(s => s.statusName === '已完成');
-    if (doneStatus) {
-      displayTasks = displayTasks.filter(t => t.status !== doneStatus.id);
-    }
+    const stoppedStatus = statuses.find(s => s.statusName === '停止');
+    displayTasks = displayTasks.filter(t => t.status !== doneStatus?.id && t.status !== stoppedStatus?.id);
   }
+  displayTasks = [...displayTasks].sort(compareTasks);
 
   // 分群顯示（全部）
   // 依 RESPONSIBLE_TABS 順序排序 members
@@ -235,7 +265,7 @@ const TaskList: React.FC<TaskListProps> = ({
             checked={hideDone}
             onChange={e => setHideDone(e.target.checked)}
           />
-          隱藏已完成
+          隱藏已完成或停止
         </label>
       </div>
       {/* 內容區 */}
