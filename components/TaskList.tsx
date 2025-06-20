@@ -13,7 +13,7 @@ interface TaskListProps {
   onViewDetail: (task: Task) => void;
   priorities: Priority[]; // 新增 prop
   statuses: StatusType[];
-  onQuickUpdate?: (taskId: string, field: 'priority'|'assignee'|'status', value: string) => void; // 新增
+  onQuickUpdate?: (taskId: string, field: 'priority'|'assignee'|'status'|'startDate'|'dueDate', value: string) => void; // 新增
 }
 
 const RESPONSIBLE_TABS = [
@@ -41,7 +41,7 @@ const TaskList: React.FC<TaskListProps> = ({
   const [activeSubTab, setActiveSubTab] = useState('all');
   const [hideDone, setHideDone] = useState(false);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
-  const [editingField, setEditingField] = useState<{taskId: string, field: 'priority'|'assignee'|'status'}|null>(null);
+  const [editingField, setEditingField] = useState<{taskId: string, field: 'priority'|'assignee'|'status'|'startDate'|'dueDate'}|null>(null);
   const [updatingTaskId, setUpdatingTaskId] = useState<string|null>(null);
 
   const formatDate = (timestamp?: Timestamp | null): string => { // Use imported Timestamp type
@@ -152,8 +152,7 @@ const TaskList: React.FC<TaskListProps> = ({
   );
 
   // 快速更新任務欄位
-  const handleQuickUpdate = (task: Task, field: 'priority'|'assignee'|'status', value: string) => {
-    // 只更新該欄位，不觸發編輯 modal
+  const handleQuickUpdate = (task: Task, field: 'priority'|'assignee'|'status'|'startDate'|'dueDate', value: string) => {
     if (onQuickUpdate) {
       if (field === 'priority' && value !== task.priority) {
         onQuickUpdate(task.id!, 'priority', value);
@@ -161,6 +160,10 @@ const TaskList: React.FC<TaskListProps> = ({
         onQuickUpdate(task.id!, 'assignee', value);
       } else if (field === 'status' && value !== task.status) {
         onQuickUpdate(task.id!, 'status', value);
+      } else if (field === 'startDate') {
+        onQuickUpdate(task.id!, 'startDate', value);
+      } else if (field === 'dueDate') {
+        onQuickUpdate(task.id!, 'dueDate', value);
       }
     }
     setEditingField(null);
@@ -315,8 +318,64 @@ const TaskList: React.FC<TaskListProps> = ({
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">
+                          {isAdmin && editingField && editingField.taskId === task.id && editingField.field === 'startDate' ? (
+                            <input
+                              type="date"
+                              className="border rounded px-2 py-1 text-xs"
+                              value={task.startDate ? task.startDate.toDate().toISOString().slice(0, 10) : ''}
+                              onChange={e => handleQuickUpdate(task, 'startDate', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="flex items-center">
+                              {formatDate(task.startDate)}
+                              {isAdmin && (
+                                <button
+                                  type="button"
+                                  className="ml-1 text-gray-400 hover:text-blue-500 focus:outline-none"
+                                  title="選擇開始日期"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setEditingField({ taskId: task.id!, field: 'startDate' as any });
+                                  }}
+                                >
+                                  <i className="far fa-calendar-alt"></i>
+                                </button>
+                              )}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">
+                          {isAdmin && editingField && editingField.taskId === task.id && editingField.field === 'dueDate' ? (
+                            <input
+                              type="date"
+                              className="border rounded px-2 py-1 text-xs"
+                              value={task.dueDate ? task.dueDate.toDate().toISOString().slice(0, 10) : ''}
+                              onChange={e => handleQuickUpdate(task, 'dueDate', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="flex items-center">
+                              {formatDate(task.dueDate)}
+                              {isAdmin && (
+                                <button
+                                  type="button"
+                                  className="ml-1 text-gray-400 hover:text-blue-500 focus:outline-none"
+                                  title="選擇截止日期"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setEditingField({ taskId: task.id!, field: 'dueDate' as any });
+                                  }}
+                                >
+                                  <i className="far fa-calendar-alt"></i>
+                                </button>
+                              )}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">{task.product}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{task.taskType}</td>
                         <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate hidden 2xl:table-cell" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
@@ -448,8 +507,64 @@ const TaskList: React.FC<TaskListProps> = ({
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">
+                          {isAdmin && editingField && editingField.taskId === task.id && editingField.field === 'startDate' ? (
+                            <input
+                              type="date"
+                              className="border rounded px-2 py-1 text-xs"
+                              value={task.startDate ? task.startDate.toDate().toISOString().slice(0, 10) : ''}
+                              onChange={e => handleQuickUpdate(task, 'startDate', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="flex items-center">
+                              {formatDate(task.startDate)}
+                              {isAdmin && (
+                                <button
+                                  type="button"
+                                  className="ml-1 text-gray-400 hover:text-blue-500 focus:outline-none"
+                                  title="選擇開始日期"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setEditingField({ taskId: task.id!, field: 'startDate' as any });
+                                  }}
+                                >
+                                  <i className="far fa-calendar-alt"></i>
+                                </button>
+                              )}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">
+                          {isAdmin && editingField && editingField.taskId === task.id && editingField.field === 'dueDate' ? (
+                            <input
+                              type="date"
+                              className="border rounded px-2 py-1 text-xs"
+                              value={task.dueDate ? task.dueDate.toDate().toISOString().slice(0, 10) : ''}
+                              onChange={e => handleQuickUpdate(task, 'dueDate', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="flex items-center">
+                              {formatDate(task.dueDate)}
+                              {isAdmin && (
+                                <button
+                                  type="button"
+                                  className="ml-1 text-gray-400 hover:text-blue-500 focus:outline-none"
+                                  title="選擇截止日期"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setEditingField({ taskId: task.id!, field: 'dueDate' as any });
+                                  }}
+                                >
+                                  <i className="far fa-calendar-alt"></i>
+                                </button>
+                              )}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">{task.product}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{task.taskType}</td>
                         <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate hidden 2xl:table-cell" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
@@ -496,8 +611,64 @@ const TaskList: React.FC<TaskListProps> = ({
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{getStatusName(task.status)}</span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">
+                    {isAdmin && editingField && editingField.taskId === task.id && editingField.field === 'startDate' ? (
+                      <input
+                        type="date"
+                        className="border rounded px-2 py-1 text-xs"
+                        value={task.startDate ? task.startDate.toDate().toISOString().slice(0, 10) : ''}
+                        onChange={e => handleQuickUpdate(task, 'startDate', e.target.value)}
+                        onBlur={() => setEditingField(null)}
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="flex items-center">
+                        {formatDate(task.startDate)}
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            className="ml-1 text-gray-400 hover:text-blue-500 focus:outline-none"
+                            title="選擇開始日期"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setEditingField({ taskId: task.id!, field: 'startDate' as any });
+                            }}
+                          >
+                            <i className="far fa-calendar-alt"></i>
+                          </button>
+                        )}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">
+                    {isAdmin && editingField && editingField.taskId === task.id && editingField.field === 'dueDate' ? (
+                      <input
+                        type="date"
+                        className="border rounded px-2 py-1 text-xs"
+                        value={task.dueDate ? task.dueDate.toDate().toISOString().slice(0, 10) : ''}
+                        onChange={e => handleQuickUpdate(task, 'dueDate', e.target.value)}
+                        onBlur={() => setEditingField(null)}
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="flex items-center">
+                        {formatDate(task.dueDate)}
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            className="ml-1 text-gray-400 hover:text-blue-500 focus:outline-none"
+                            title="選擇截止日期"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setEditingField({ taskId: task.id!, field: 'dueDate' as any });
+                            }}
+                          >
+                            <i className="far fa-calendar-alt"></i>
+                          </button>
+                        )}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">{task.product}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{task.taskType}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate hidden 2xl:table-cell" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
