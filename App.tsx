@@ -145,6 +145,28 @@ const App: React.FC = () => {
     }
   };
 
+  // 快速欄位即時更新（不開啟 modal）
+  const handleQuickUpdate = async (taskId: string, field: 'priority'|'assignee'|'status', value: string) => {
+    setError(null);
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      // 以原本的 task 為基礎，僅覆蓋要變更的欄位，避免欄位被清空
+      let update: Partial<Task> = {
+        priority: task.priority,
+        assigneeId: task.assigneeId,
+        status: task.status,
+      };
+      if (field === 'priority') update.priority = value;
+      if (field === 'assignee') update.assigneeId = value;
+      if (field === 'status') update.status = value;
+      await apiUpdateTask(taskId, update);
+    } catch (err) {
+      console.error('快速更新任務失敗', err);
+      setError('快速更新任務失敗，請重試。');
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
@@ -180,6 +202,7 @@ const App: React.FC = () => {
               onViewDetail={(task) => { setSelectedTask(task); setIsTaskDetailOpen(true); }}
               priorities={priorities}
               statuses={statuses}
+              onQuickUpdate={handleQuickUpdate}
             />
           )}
         </main>
