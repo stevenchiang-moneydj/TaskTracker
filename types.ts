@@ -1,11 +1,10 @@
 import { Timestamp } from 'firebase/firestore';
 
-export enum Status {
-  IN_PROGRESS = "進行中",
-  DONE = "已完成",
-  TESTING = "測試中",
-  TO_BE_ARRANGED = "待安排",
-  TO_MERGE = "待Merge",
+// 狀態型別與 Firestore 對應
+export interface Status {
+  id: string; // documentId
+  statusName: string;
+  statusNumber: number;
 }
 
 export enum Product {
@@ -37,7 +36,7 @@ export interface Task {
   startDate?: Timestamp | null;
   dueDate?: Timestamp | null;
   priority: string; // priorityId
-  status: Status;
+  status: string; // statusId
   product: Product;
   taskType: TaskType;
   notes?: string;

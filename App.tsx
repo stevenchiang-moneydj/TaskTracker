@@ -7,8 +7,8 @@ import ConfirmationModal from './components/ConfirmationModal';
 import LoadingSpinner from './components/LoadingSpinner';
 import TaskDetailModal from './components/TaskDetailModal';
 import { useAuth } from './hooks/useAuth';
-import { Task, Member } from './types';
-import { Priority } from './services/firebase';
+import { Task, Member, Status as StatusType } from './types';
+import { Priority, getStatuses } from './services/firebase';
 import { 
   onTasksSnapshot, 
   createTask as apiCreateTask, 
@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
+  const [statuses, setStatuses] = useState<StatusType[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -65,6 +66,10 @@ const App: React.FC = () => {
     getPriorities().then(setPriorities).catch(err => {
       console.error('載入優先級失敗', err);
       setPriorities([]);
+    });
+    getStatuses().then(setStatuses).catch(err => {
+      console.error('載入狀態失敗', err);
+      setStatuses([]);
     });
 
     return () => {
@@ -174,6 +179,7 @@ const App: React.FC = () => {
               isAdmin={isAdmin}
               onViewDetail={(task) => { setSelectedTask(task); setIsTaskDetailOpen(true); }}
               priorities={priorities}
+              statuses={statuses}
             />
           )}
         </main>
@@ -184,6 +190,7 @@ const App: React.FC = () => {
           initialTask={editingTask}
           members={members}
           priorities={priorities}
+          statuses={statuses}
         />
         <TaskDetailModal
           isOpen={isTaskDetailOpen}
@@ -191,6 +198,7 @@ const App: React.FC = () => {
           onClose={() => setIsTaskDetailOpen(false)}
           members={members}
           priorities={priorities}
+          statuses={statuses}
         />
         <ConfirmationModal
           isOpen={isDeleteModalOpen}

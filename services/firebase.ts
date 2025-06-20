@@ -22,7 +22,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { FIREBASE_CONFIG } from '../constants';
-import { Task, Member, FirebaseUser } from '../types'; // Custom FirebaseUser type
+import { Task, Member, FirebaseUser, Status } from '../types'; // Custom FirebaseUser type
 
 const firebaseApp = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(firebaseApp);
@@ -30,6 +30,7 @@ const db = getFirestore(firebaseApp);
 
 const TASKS_COLLECTION = 'tasks';
 const MEMBERS_COLLECTION = 'members';
+const STATUS_COLLECTION = 'status';
 
 // Authentication
 export const onAuthUserChanged = (callback: (user: FirebaseUser | null) => void) => {
@@ -96,7 +97,17 @@ export const getPriorities = async (): Promise<Priority[]> => {
   }));
 };
 
-// 定義 TaskInput 型別，priority 改為 string (priorityId)
+// 取得所有狀態，依 statusNumber 排序
+export const getStatuses = async (): Promise<Status[]> => {
+  const q = query(collection(db, STATUS_COLLECTION), orderBy('statusNumber'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(docSnap => ({
+    id: docSnap.id,
+    ...(docSnap.data() as Omit<Status, 'id'>)
+  }));
+};
+
+// 定義 TaskInput 型別，priority/status 均為 id
 export type TaskInput = {
   title: string;
   description?: string;
@@ -105,7 +116,7 @@ export type TaskInput = {
   startDate?: Timestamp | null;
   dueDate?: Timestamp | null;
   priority: string; // priorityId
-  status: '待安排' | '進行中' | '已完成' | '測試中' | '待Merge';
+  status: string;   // statusId
   product: 'XQ' | 'XQNext' | 'XT';
   taskType: 'Spec' | 'Bug' | '普測' | '文件' | '客服信件';
   notes?: string;
