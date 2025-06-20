@@ -81,7 +81,22 @@ export const onTasksSnapshot = (
   }, onError);
 };
 
-// 定義 TaskInput 型別，包含所有欄位
+// 取得所有優先級（priority）
+export type Priority = {
+  id: string; // document id
+  levelName: string;
+  levelNumber: number;
+};
+
+export const getPriorities = async (): Promise<Priority[]> => {
+  const prioritiesSnapshot = await getDocs(query(collection(db, 'priority'), orderBy('levelNumber', 'asc')));
+  return prioritiesSnapshot.docs.map(docSnap => ({
+    id: docSnap.id,
+    ...(docSnap.data() as Omit<Priority, 'id'>)
+  }));
+};
+
+// 定義 TaskInput 型別，priority 改為 string (priorityId)
 export type TaskInput = {
   title: string;
   description?: string;
@@ -89,7 +104,7 @@ export type TaskInput = {
   assigneeId?: string;
   startDate?: Timestamp | null;
   dueDate?: Timestamp | null;
-  priority: '高' | '中' | '低';
+  priority: string; // priorityId
   status: '待安排' | '進行中' | '已完成' | '測試中' | '待Merge';
   product: 'XQ' | 'XQNext' | 'XT';
   taskType: 'Spec' | 'Bug' | '普測' | '文件' | '客服信件';

@@ -1,11 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
 
-export enum Priority {
-  HIGH = "高",
-  MEDIUM = "中",
-  LOW = "低",
-}
-
 export enum Status {
   IN_PROGRESS = "進行中",
   DONE = "已完成",
@@ -42,7 +36,7 @@ export interface Task {
   assigneeName?: string; // For display purposes, denormalized or fetched
   startDate?: Timestamp | null;
   dueDate?: Timestamp | null;
-  priority: Priority;
+  priority: string; // priorityId
   status: Status;
   product: Product;
   taskType: TaskType;

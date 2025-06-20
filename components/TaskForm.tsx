@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Task, Priority, Status, Product, TaskType, Member } from '../types';
-import { Timestamp } from '../services/firebase';
-import { PRIORITY_OPTIONS, STATUS_OPTIONS, PRODUCT_OPTIONS, TASK_TYPE_OPTIONS } from '../constants';
+import { Task, Status, Product, TaskType, Member } from '../types';
+import { Timestamp, Priority } from '../services/firebase';
+import { STATUS_OPTIONS, PRODUCT_OPTIONS, TASK_TYPE_OPTIONS } from '../constants';
 
 interface TaskFormProps {
   isOpen: boolean;
@@ -9,16 +9,17 @@ interface TaskFormProps {
   onSubmit: (task: Task) => Promise<void>;
   initialTask?: Task | null;
   members: Member[];
+  priorities: Priority[];
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialTask, members }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialTask, members, priorities }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [gitIssueUrl, setGitIssueUrl] = useState('');
   const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined);
   const [startDate, setStartDate] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
-  const [priority, setPriority] = useState<Priority>(Priority.MEDIUM);
+  const [priority, setPriority] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.TO_BE_ARRANGED);
   const [product, setProduct] = useState<Product>(Product.XQ);
   const [taskType, setTaskType] = useState<TaskType>(TaskType.SPEC);
@@ -34,7 +35,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
       setAssigneeId(initialTask.assigneeId || undefined);
       setStartDate(initialTask.startDate ? initialTask.startDate.toDate().toISOString().split('T')[0] : undefined);
       setDueDate(initialTask.dueDate ? initialTask.dueDate.toDate().toISOString().split('T')[0] : undefined);
-      setPriority(initialTask.priority);
+      setPriority(initialTask.priority || '');
       setStatus(initialTask.status);
       setProduct(initialTask.product);
       setTaskType(initialTask.taskType);
@@ -47,14 +48,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
       setAssigneeId(undefined);
       setStartDate(undefined);
       setDueDate(undefined);
-      setPriority(Priority.MEDIUM);
+      // 預設選到 levelName 為「一般」的 priorityId
+      const normal = priorities.find(p => p.levelName === '一般');
+      setPriority(normal ? normal.id : (priorities[0]?.id || ''));
       setStatus(Status.TO_BE_ARRANGED); 
       setProduct(Product.XQ);
       setTaskType(TaskType.SPEC);
       setNotes('');
     }
     setError(null); // Clear previous errors when form opens or initialTask changes
-  }, [initialTask, isOpen]);
+  }, [initialTask, isOpen, priorities]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,8 +155,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
           
             <div>
               <label htmlFor="priority" className={labelClass}>優先級 <span className="text-red-500">*</span></label>
-              <select id="priority" value={priority} onChange={(e) => setPriority(e.target.value as Priority)} className={inputClass}>
-                {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+              <select id="priority" value={priority} onChange={e => setPriority(e.target.value)} className={inputClass} required>
+                <option value="" disabled>請選擇</option>
+                {priorities.map(p => (
+                  <option key={p.id} value={p.id}>{p.levelName}</option>
+                ))}
               </select>
             </div>
             <div>

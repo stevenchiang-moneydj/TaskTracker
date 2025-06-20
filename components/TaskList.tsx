@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task, Member } from '../types';
-import { Timestamp } from '../services/firebase'; // Import Timestamp
+import { Priority, Timestamp } from '../services/firebase'; // Import Priority and Timestamp
 
 interface TaskListProps {
   tasks: Task[];
@@ -11,6 +11,7 @@ interface TaskListProps {
   setFilterAssigneeId: (assigneeId: string | null) => void;
   isAdmin: boolean;
   onViewDetail: (task: Task) => void;
+  priorities: Priority[]; // 新增 prop
 }
 
 const RESPONSIBLE_TABS = [
@@ -29,7 +30,8 @@ const TaskList: React.FC<TaskListProps> = ({
   filterAssigneeId, 
   setFilterAssigneeId,
   isAdmin,
-  onViewDetail
+  onViewDetail,
+  priorities
 }) => {
   const [activeMainTab] = useState('負責人'); // 目前僅一個大頁籤
   const [activeSubTab, setActiveSubTab] = useState('all');
@@ -46,15 +48,23 @@ const TaskList: React.FC<TaskListProps> = ({
       ? tasks.filter(task => task.assigneeId === filterAssigneeId) 
       : tasks;
 
-  const getPriorityClass = (priority: string) => {
-    switch (priority) {
-      case '高': return 'text-red-600 font-semibold';
-      case '中': return 'text-yellow-600 font-semibold';
-      case '低': return 'text-green-600 font-semibold';
-      default: return 'text-gray-700';
+  const getPriorityClass = (priorityId: string) => {
+    const p = priorities.find(p => p.id === priorityId);
+    if (!p) return 'bg-gray-200 text-gray-700';
+    switch (p.levelName) {
+      case '緊急': return 'bg-red-100 text-red-800 font-bold';
+      case '優先': return 'bg-blue-100 text-blue-900 font-bold';
+      case '一般': return 'bg-green-100 text-green-800 font-bold';
+      case '低': return 'bg-green-50 text-green-400 font-semibold';
+      case '擱置': return 'bg-gray-100 text-gray-400 font-semibold';
+      default: return 'bg-gray-200 text-gray-700';
     }
   };
-  
+  const getPriorityName = (priorityId: string) => {
+    const p = priorities.find(p => p.id === priorityId);
+    return p ? p.levelName : '-';
+  };
+
   const getStatusClass = (status: string) => {
     switch (status) {
       case '待辦': return 'bg-yellow-100 text-yellow-800';
@@ -78,12 +88,14 @@ const TaskList: React.FC<TaskListProps> = ({
   }
 
   // 分群顯示（全部）
-  const groupedTasks = members
-    .map(member => ({
-      member,
-      tasks: displayTasks.filter(t => t.assigneeId === member.id)
-    }))
-    .filter(group => group.tasks.length > 0);
+  // 依 RESPONSIBLE_TABS 順序排序 members
+  const memberOrder = RESPONSIBLE_TABS.map(tab => tab.label);
+  const groupedTasks = memberOrder
+    .map(name => {
+      const member = members.find(m => m.displayName === name);
+      return member ? { member, tasks: displayTasks.filter(t => t.assigneeId === member.id) } : null;
+    })
+    .filter(group => group && group.tasks.length > 0) as { member: Member, tasks: Task[] }[];
   const unassignedTasks = displayTasks.filter(t => !t.assigneeId);
 
   // 共用表格欄寬設定
@@ -118,6 +130,10 @@ const TaskList: React.FC<TaskListProps> = ({
       </tr>
     </thead>
   );
+
+  if (!priorities || priorities.length === 0) {
+    return <div className="text-gray-500 text-center py-8">載入優先級資料中...</div>;
+  }
 
   return (
     <div className="bg-white shadow-xl rounded-lg p-4 md:p-6">
@@ -171,7 +187,9 @@ const TaskList: React.FC<TaskListProps> = ({
                             task.title
                           )}
                         </td>
-                        <td className={`px-4 py-3 whitespace-nowrap text-sm ${getPriorityClass(task.priority)}`}>{task.priority}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(task.priority)}`}>{getPriorityName(task.priority)}</span>
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
                           <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{task.status}</span>
@@ -217,7 +235,9 @@ const TaskList: React.FC<TaskListProps> = ({
                             task.title
                           )}
                         </td>
-                        <td className={`px-4 py-3 whitespace-nowrap text-sm ${getPriorityClass(task.priority)}`}>{task.priority}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(task.priority)}`}>{getPriorityName(task.priority)}</span>
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
                           <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{task.status}</span>
@@ -262,7 +282,9 @@ const TaskList: React.FC<TaskListProps> = ({
                       task.title
                     )}
                   </td>
-                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${getPriorityClass(task.priority)}`}>{task.priority}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(task.priority)}`}>{getPriorityName(task.priority)}</span>
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{task.status}</span>

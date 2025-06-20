@@ -8,18 +8,21 @@ import LoadingSpinner from './components/LoadingSpinner';
 import TaskDetailModal from './components/TaskDetailModal';
 import { useAuth } from './hooks/useAuth';
 import { Task, Member } from './types';
+import { Priority } from './services/firebase';
 import { 
   onTasksSnapshot, 
   createTask as apiCreateTask, 
   updateTask as apiUpdateTask, 
   deleteTask as apiDeleteTask,
-  getMembers
+  getMembers,
+  getPriorities
 } from './services/firebase';
 
 const App: React.FC = () => {
   const { user, isAdmin, isLoading: authLoading } = useAuth(); // Destructure user for potential display
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [priorities, setPriorities] = useState<Priority[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -58,6 +61,11 @@ const App: React.FC = () => {
       }
     };
     fetchInitialMembers();
+
+    getPriorities().then(setPriorities).catch(err => {
+      console.error('載入優先級失敗', err);
+      setPriorities([]);
+    });
 
     return () => {
       unsubscribeTasks();
@@ -165,6 +173,7 @@ const App: React.FC = () => {
               setFilterAssigneeId={setFilterAssigneeId}
               isAdmin={isAdmin}
               onViewDetail={(task) => { setSelectedTask(task); setIsTaskDetailOpen(true); }}
+              priorities={priorities}
             />
           )}
         </main>
@@ -174,12 +183,14 @@ const App: React.FC = () => {
           onSubmit={handleSubmitTaskForm}
           initialTask={editingTask}
           members={members}
+          priorities={priorities}
         />
         <TaskDetailModal
           isOpen={isTaskDetailOpen}
           task={selectedTask}
           onClose={() => setIsTaskDetailOpen(false)}
           members={members}
+          priorities={priorities}
         />
         <ConfirmationModal
           isOpen={isDeleteModalOpen}
