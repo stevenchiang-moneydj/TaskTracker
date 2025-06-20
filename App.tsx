@@ -260,7 +260,7 @@ const App: React.FC = () => {
           confirmButtonText="確認刪除"
         />
          <footer className="text-center py-5 bg-gray-200 text-gray-700 text-sm border-t border-gray-300">
-            團隊任務追蹤器 &copy; {new Date().getFullYear()}
+            工作追蹤 &copy; {new Date().getFullYear()}
         </footer>
       </div>
     </HashRouter>
