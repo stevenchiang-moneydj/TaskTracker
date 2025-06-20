@@ -166,26 +166,23 @@ const App: React.FC = () => {
     try {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
+      // 保留所有欄位，僅覆蓋要更新的欄位
       let update: Partial<Task> = {
-        priority: task.priority,
-        assigneeId: task.assigneeId,
-        status: task.status,
-        startDate: task.startDate,
-        dueDate: task.dueDate,
-        product: task.product,
+        ...task,
       };
       if (field === 'priority') update.priority = value;
       if (field === 'assignee') update.assigneeId = value;
       if (field === 'status') update.status = value;
       if (field === 'startDate') {
-        // value 為 'YYYY-MM-DD'，需轉為 Timestamp
         update.startDate = value ? Timestamp.fromDate(new Date(value)) : null;
       }
       if (field === 'dueDate') {
         update.dueDate = value ? Timestamp.fromDate(new Date(value)) : null;
       }
       if (field === 'product') update.product = value;
-      await apiUpdateTask(taskId, update);
+      // 移除 id, assigneeName, createdAt, updatedAt，避免 Firestore 欄位衝突
+      const { id, assigneeName, createdAt, updatedAt, ...firestoreUpdate } = update;
+      await apiUpdateTask(taskId, firestoreUpdate);
     } catch (err) {
       console.error('快速更新任務失敗', err);
       setError('快速更新任務失敗，請重試。');
