@@ -100,7 +100,11 @@ const TaskList: React.FC<TaskListProps> = ({
     displayTasks = member ? tasks.filter(t => t.assigneeId === member.id) : [];
   }
   if (hideDone) {
-    displayTasks = displayTasks.filter(t => t.status !== '已完成');
+    // 取得 "已完成" status 的 id
+    const doneStatus = statuses.find(s => s.statusName === '已完成');
+    if (doneStatus) {
+      displayTasks = displayTasks.filter(t => t.status !== doneStatus.id);
+    }
   }
 
   // 分群顯示（全部）
