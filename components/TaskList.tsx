@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Task, Member } from '../types';
+import { Task, Member, Status as StatusType } from '../types';
 import { Priority, Timestamp } from '../services/firebase'; // Import Priority and Timestamp
 
 interface TaskListProps {
@@ -12,6 +12,7 @@ interface TaskListProps {
   isAdmin: boolean;
   onViewDetail: (task: Task) => void;
   priorities: Priority[]; // 新增 prop
+  statuses: StatusType[];
 }
 
 const RESPONSIBLE_TABS = [
@@ -31,7 +32,8 @@ const TaskList: React.FC<TaskListProps> = ({
   setFilterAssigneeId,
   isAdmin,
   onViewDetail,
-  priorities
+  priorities,
+  statuses
 }) => {
   const [activeMainTab] = useState('負責人'); // 目前僅一個大頁籤
   const [activeSubTab, setActiveSubTab] = useState('all');
@@ -65,16 +67,25 @@ const TaskList: React.FC<TaskListProps> = ({
     return p ? p.levelName : '-';
   };
 
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case '待辦': return 'bg-yellow-100 text-yellow-800';
-      case '進行中': return 'bg-blue-100 text-blue-800';
-      case '已完成': return 'bg-green-100 text-green-800';
-      case '測試中': return 'bg-purple-100 text-purple-800';
-      case '待安排': return 'bg-gray-200 text-gray-800'; // Darker gray for better visibility
-      case '待Merge': return 'bg-indigo-100 text-indigo-800';
-      default: return 'bg-gray-300 text-gray-700';
+  const getStatusClass = (statusId: string) => {
+    const s = statuses.find(s => s.id === statusId);
+    if (!s) return 'bg-gray-300 text-gray-700';
+    switch (s.statusName) {
+      case '待安排': return 'bg-gray-100 text-gray-700 border border-gray-300';
+      case '評估中': return 'bg-cyan-100 text-cyan-900 border border-cyan-300';
+      case '進行中': return 'bg-blue-100 text-blue-900 border border-blue-300';
+      case '測試中': return 'bg-yellow-100 text-yellow-900 border border-yellow-300';
+      case '待Merge': return 'bg-indigo-100 text-indigo-900 border border-indigo-300';
+      case '已完成': return 'bg-green-100 text-green-900 border border-green-300';
+      case '追蹤': return 'bg-pink-100 text-pink-900 border border-pink-300';
+      case '暫停': return 'bg-orange-100 text-orange-900 border border-orange-300';
+      case '停止': return 'bg-gray-200 text-gray-500 border border-gray-300';
+      default: return 'bg-gray-200 text-gray-700 border border-gray-300';
     }
+  };
+  const getStatusName = (statusId: string) => {
+    const s = statuses.find(s => s.id === statusId);
+    return s ? s.statusName : '-';
   };
 
   // 依小頁籤篩選
@@ -192,7 +203,7 @@ const TaskList: React.FC<TaskListProps> = ({
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{task.status}</span>
+                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{getStatusName(task.status)}</span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
@@ -240,7 +251,7 @@ const TaskList: React.FC<TaskListProps> = ({
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{task.status}</span>
+                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{getStatusName(task.status)}</span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
@@ -287,7 +298,7 @@ const TaskList: React.FC<TaskListProps> = ({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{task.status}</span>
+                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{getStatusName(task.status)}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>

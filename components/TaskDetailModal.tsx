@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Task, Member } from '../types';
+import { Task, Member, Status as StatusType } from '../types';
 import { Priority } from '../services/firebase';
 
 interface TaskDetailModalProps {
@@ -7,13 +7,15 @@ interface TaskDetailModalProps {
   task: Task | null;
   onClose: () => void;
   members: Member[];
-  priorities: Priority[]; // 新增 prop
+  priorities: Priority[];
+  statuses: StatusType[];
 }
 
-const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, task, onClose, members, priorities }) => {
+const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, task, onClose, members, priorities, statuses }) => {
   if (!isOpen || !task) return null;
   const assignee = members.find(m => m.id === task.assigneeId);
   const priorityObj = useMemo(() => priorities.find(p => p.id === task.priority), [priorities, task.priority]);
+  const statusObj = useMemo(() => statuses.find(s => s.id === task.status), [statuses, task.status]);
 
   return (
     <div
@@ -40,7 +42,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, task, onClose
           <div><span className="font-semibold">開始日期：</span>{task.startDate ? task.startDate.toDate().toLocaleDateString() : '-'}</div>
           <div><span className="font-semibold">截止日期：</span>{task.dueDate ? task.dueDate.toDate().toLocaleDateString() : '-'}</div>
           <div><span className="font-semibold">優先級：</span>{priorityObj ? priorityObj.levelName : '-'}</div>
-          <div><span className="font-semibold">狀態：</span>{task.status}</div>
+          <div><span className="font-semibold">狀態：</span>{statusObj ? statusObj.statusName : '-'}</div>
           <div><span className="font-semibold">產品：</span>{task.product}</div>
           <div><span className="font-semibold">任務類型：</span>{task.taskType}</div>
           <div><span className="font-semibold">備註：</span>{task.notes || '-'}</div>

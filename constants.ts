@@ -1,4 +1,4 @@
-import { Status, Product, TaskType } from './types';
+import { Product, TaskType } from './types';
 
 export const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBWaGYQIE58c4F8FhWWQI50eNYXkmKVT2c", // This should ideally be in environment variables
@@ -13,8 +13,8 @@ export const FIREBASE_CONFIG = {
 // For this example, any logged-in user is treated as admin for task management.
 // export const ADMIN_UIDS = ['SOME_ADMIN_USER_ID'];
 
-// export const PRIORITY_OPTIONS = [Priority.HIGH, Priority.MEDIUM, Priority.LOW]; // 移除，改用 getPriorities 取得
-export const STATUS_OPTIONS = [Status.TO_BE_ARRANGED, Status.IN_PROGRESS, Status.TESTING, Status.TO_MERGE, Status.DONE];
+// export const PRIORITY_OPTIONS = [Priority.HIGH, Priority.MEDIUM, Priority.LOW]; // 已移除，改用 getPriorities 取得
+// export const STATUS_OPTIONS = [Status.TO_BE_ARRANGED, Status.IN_PROGRESS, Status.TESTING, Status.TO_MERGE, Status.DONE]; // 已移除，改用 getStatuses 取得
 export const PRODUCT_OPTIONS = [Product.XQ, Product.XQNEXT, Product.XT];
 export const TASK_TYPE_OPTIONS = [TaskType.SPEC, TaskType.BUG, TaskType.GENERAL_TEST, TaskType.DOCUMENT, TaskType.CUSTOMER_SUPPORT];
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Task, Status, Product, TaskType, Member } from '../types';
+import { Task, Status as StatusType, Product, TaskType, Member } from '../types';
 import { Timestamp, Priority } from '../services/firebase';
-import { STATUS_OPTIONS, PRODUCT_OPTIONS, TASK_TYPE_OPTIONS } from '../constants';
+import { PRODUCT_OPTIONS, TASK_TYPE_OPTIONS } from '../constants';
 
 interface TaskFormProps {
   isOpen: boolean;
@@ -10,9 +10,10 @@ interface TaskFormProps {
   initialTask?: Task | null;
   members: Member[];
   priorities: Priority[];
+  statuses: StatusType[];
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialTask, members, priorities }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialTask, members, priorities, statuses }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [gitIssueUrl, setGitIssueUrl] = useState('');
@@ -20,7 +21,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
   const [startDate, setStartDate] = useState<string | undefined>(undefined);
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
   const [priority, setPriority] = useState<string>('');
-  const [status, setStatus] = useState<Status>(Status.TO_BE_ARRANGED);
+  const [status, setStatus] = useState<string>('');
   const [product, setProduct] = useState<Product>(Product.XQ);
   const [taskType, setTaskType] = useState<TaskType>(TaskType.SPEC);
   const [notes, setNotes] = useState('');
@@ -36,7 +37,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
       setStartDate(initialTask.startDate ? initialTask.startDate.toDate().toISOString().split('T')[0] : undefined);
       setDueDate(initialTask.dueDate ? initialTask.dueDate.toDate().toISOString().split('T')[0] : undefined);
       setPriority(initialTask.priority || '');
-      setStatus(initialTask.status);
+      setStatus(initialTask.status || (statuses[0]?.id || ''));
       setProduct(initialTask.product);
       setTaskType(initialTask.taskType);
       setNotes(initialTask.notes || '');
@@ -51,13 +52,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
       // 預設選到 levelName 為「一般」的 priorityId
       const normal = priorities.find(p => p.levelName === '一般');
       setPriority(normal ? normal.id : (priorities[0]?.id || ''));
-      setStatus(Status.TO_BE_ARRANGED); 
+      // 預設選到 statusName 為「待安排」的 statusId
+      const defaultStatus = statuses.find(s => s.statusName === '待安排');
+      setStatus(defaultStatus ? defaultStatus.id : (statuses[0]?.id || ''));
       setProduct(Product.XQ);
       setTaskType(TaskType.SPEC);
       setNotes('');
     }
     setError(null); // Clear previous errors when form opens or initialTask changes
-  }, [initialTask, isOpen, priorities]);
+  }, [initialTask, isOpen, priorities, statuses]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,8 +167,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
             </div>
             <div>
               <label htmlFor="status" className={labelClass}>狀態 <span className="text-red-500">*</span></label>
-              <select id="status" value={status} onChange={(e) => setStatus(e.target.value as Status)} className={inputClass}>
-                 {STATUS_OPTIONS.filter(s => s).map(s => <option key={s} value={s}>{s}</option>)}
+              <select id="status" value={status} onChange={e => setStatus(e.target.value)} className={inputClass} required>
+                <option value="" disabled>請選擇</option>
+                {statuses.map(s => (
+                  <option key={s.id} value={s.id}>{s.statusName}</option>
+                ))}
               </select>
             </div>
           
