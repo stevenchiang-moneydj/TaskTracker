@@ -118,6 +118,21 @@ const TaskList: React.FC<TaskListProps> = ({
     .filter(group => group && group.tasks.length > 0) as { member: Member, tasks: Task[] }[];
   const unassignedTasks = displayTasks.filter(t => !t.assigneeId);
 
+  // 判斷截止日是否緊急（今天、已過期、明天，且狀態為特定值）
+  const isDueDateUrgent = (dueDate: Timestamp | null | undefined, statusId: string) => {
+    if (!dueDate) return false;
+    const urgentStatusNames = ['待安排', '評估中', '進行中', '測試中'];
+    const status = statuses.find(s => s.id === statusId);
+    if (!status || !urgentStatusNames.includes(status.statusName)) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const due = dueDate.toDate();
+    due.setHours(0,0,0,0);
+    const diffDays = Math.floor((due.getTime() - today.getTime()) / (1000*60*60*24));
+    // 今天、已過期、明天都標紅
+    return diffDays <= 1;
+  };
+
   // 共用表格欄寬設定
   const TableColGroup = () => (
     <colgroup>
@@ -353,12 +368,21 @@ const TaskList: React.FC<TaskListProps> = ({
                               type="date"
                               className="border rounded px-2 py-1 text-xs"
                               value={task.dueDate ? task.dueDate.toDate().toISOString().slice(0, 10) : ''}
-                              onChange={e => handleQuickUpdate(task, 'dueDate', e.target.value)}
+                              min={task.startDate ? task.startDate.toDate().toISOString().slice(0, 10) : undefined}
+                              onChange={e => {
+                                const selected = e.target.value;
+                                if (task.startDate && selected && selected < task.startDate.toDate().toISOString().slice(0, 10)) {
+                                  alert('截止日不可早於開始日，請重新選擇！');
+                                  e.target.value = '';
+                                  return;
+                                }
+                                handleQuickUpdate(task, 'dueDate', selected);
+                              }}
                               onBlur={() => setEditingField(null)}
                               autoFocus
                             />
                           ) : (
-                            <span className="flex items-center">
+                            <span className={`flex items-center ${isDueDateUrgent(task.dueDate, task.status) ? 'text-red-600 font-bold animate-pulse' : ''}`}>
                               {formatDate(task.dueDate)}
                               {isAdmin && (
                                 <button
@@ -542,12 +566,21 @@ const TaskList: React.FC<TaskListProps> = ({
                               type="date"
                               className="border rounded px-2 py-1 text-xs"
                               value={task.dueDate ? task.dueDate.toDate().toISOString().slice(0, 10) : ''}
-                              onChange={e => handleQuickUpdate(task, 'dueDate', e.target.value)}
+                              min={task.startDate ? task.startDate.toDate().toISOString().slice(0, 10) : undefined}
+                              onChange={e => {
+                                const selected = e.target.value;
+                                if (task.startDate && selected && selected < task.startDate.toDate().toISOString().slice(0, 10)) {
+                                  alert('截止日不可早於開始日，請重新選擇！');
+                                  e.target.value = '';
+                                  return;
+                                }
+                                handleQuickUpdate(task, 'dueDate', selected);
+                              }}
                               onBlur={() => setEditingField(null)}
                               autoFocus
                             />
                           ) : (
-                            <span className="flex items-center">
+                            <span className={`flex items-center ${isDueDateUrgent(task.dueDate, task.status) ? 'text-red-600 font-bold animate-pulse' : ''}`}>
                               {formatDate(task.dueDate)}
                               {isAdmin && (
                                 <button
@@ -646,12 +679,21 @@ const TaskList: React.FC<TaskListProps> = ({
                         type="date"
                         className="border rounded px-2 py-1 text-xs"
                         value={task.dueDate ? task.dueDate.toDate().toISOString().slice(0, 10) : ''}
-                        onChange={e => handleQuickUpdate(task, 'dueDate', e.target.value)}
+                        min={task.startDate ? task.startDate.toDate().toISOString().slice(0, 10) : undefined}
+                        onChange={e => {
+                          const selected = e.target.value;
+                          if (task.startDate && selected && selected < task.startDate.toDate().toISOString().slice(0, 10)) {
+                            alert('截止日不可早於開始日，請重新選擇！');
+                            e.target.value = '';
+                            return;
+                          }
+                          handleQuickUpdate(task, 'dueDate', selected);
+                        }}
                         onBlur={() => setEditingField(null)}
                         autoFocus
                       />
                     ) : (
-                      <span className="flex items-center">
+                      <span className={`flex items-center ${isDueDateUrgent(task.dueDate, task.status) ? 'text-red-600 font-bold animate-pulse' : ''}`}>
                         {formatDate(task.dueDate)}
                         {isAdmin && (
                           <button

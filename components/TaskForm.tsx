@@ -153,7 +153,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
             </div>
             <div>
               <label htmlFor="dueDate" className={labelClass}>截止日期</label>
-              <input type="date" id="dueDate" value={dueDate || ''} onChange={(e) => setDueDate(e.target.value)} className={inputClass} />
+              <input
+                type="date"
+                id="dueDate"
+                value={dueDate || ''}
+                min={startDate || undefined}
+                onChange={e => {
+                  const selected = e.target.value;
+                  if (startDate && selected && selected < startDate) {
+                    alert('截止日不可早於開始日，請重新選擇！');
+                    setDueDate(undefined);
+                    return;
+                  }
+                  setDueDate(selected);
+                }}
+                className={inputClass}
+              />
             </div>
           
             <div>
