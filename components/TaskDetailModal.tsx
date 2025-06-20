@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Task, Member, Status as StatusType } from '../types';
+import { Task, Member, Status as StatusType, Product } from '../types';
 import { Priority } from '../services/firebase';
 
 interface TaskDetailModalProps {
@@ -9,13 +9,15 @@ interface TaskDetailModalProps {
   members: Member[];
   priorities: Priority[];
   statuses: StatusType[];
+  products: Product[];
 }
 
-const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, task, onClose, members, priorities, statuses }) => {
+const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, task, onClose, members, priorities, statuses, products }) => {
   if (!isOpen || !task) return null;
   const assignee = members.find(m => m.id === task.assigneeId);
   const priorityObj = useMemo(() => priorities.find(p => p.id === task.priority), [priorities, task.priority]);
   const statusObj = useMemo(() => statuses.find(s => s.id === task.status), [statuses, task.status]);
+  const productObj = useMemo(() => products.find(p => p.id === task.product), [products, task.product]);
 
   return (
     <div
@@ -43,7 +45,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, task, onClose
           <div><span className="font-semibold">截止日期：</span>{task.dueDate ? task.dueDate.toDate().toLocaleDateString() : '-'}</div>
           <div><span className="font-semibold">優先級：</span>{priorityObj ? priorityObj.levelName : '-'}</div>
           <div><span className="font-semibold">狀態：</span>{statusObj ? statusObj.statusName : '-'}</div>
-          <div><span className="font-semibold">產品：</span>{task.product}</div>
+          <div><span className="font-semibold">產品：</span>{productObj ? productObj.productName : '-'}</div>
           <div><span className="font-semibold">任務類型：</span>{task.taskType}</div>
           <div><span className="font-semibold">備註：</span>{task.notes || '-'}</div>
           <div><span className="font-semibold">建立時間：</span>{task.createdAt ? task.createdAt.toDate().toLocaleString() : '-'}</div>

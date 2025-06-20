@@ -7,8 +7,8 @@ import ConfirmationModal from './components/ConfirmationModal';
 import LoadingSpinner from './components/LoadingSpinner';
 import TaskDetailModal from './components/TaskDetailModal';
 import { useAuth } from './hooks/useAuth';
-import { Task, Member, Status as StatusType } from './types';
-import { Priority, getStatuses } from './services/firebase';
+import { Task, Member, Status as StatusType, Product } from './types';
+import { Priority, getStatuses, getProducts } from './services/firebase';
 import { 
   onTasksSnapshot, 
   createTask as apiCreateTask, 
@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [statuses, setStatuses] = useState<StatusType[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -71,6 +72,10 @@ const App: React.FC = () => {
     getStatuses().then(setStatuses).catch(err => {
       console.error('載入狀態失敗', err);
       setStatuses([]);
+    });
+    getProducts().then(setProducts).catch(err => {
+      console.error('載入產品失敗', err);
+      setProducts([]);
     });
 
     return () => {
@@ -149,7 +154,7 @@ const App: React.FC = () => {
   // 快速欄位即時更新（不開啟 modal）
   const handleQuickUpdate = async (
     taskId: string,
-    field: 'priority'|'assignee'|'status'|'startDate'|'dueDate',
+    field: 'priority'|'assignee'|'status'|'startDate'|'dueDate'|'product',
     value: string
   ) => {
     setError(null);
@@ -162,6 +167,7 @@ const App: React.FC = () => {
         status: task.status,
         startDate: task.startDate,
         dueDate: task.dueDate,
+        product: task.product,
       };
       if (field === 'priority') update.priority = value;
       if (field === 'assignee') update.assigneeId = value;
@@ -173,6 +179,7 @@ const App: React.FC = () => {
       if (field === 'dueDate') {
         update.dueDate = value ? Timestamp.fromDate(new Date(value)) : null;
       }
+      if (field === 'product') update.product = value;
       await apiUpdateTask(taskId, update);
     } catch (err) {
       console.error('快速更新任務失敗', err);
@@ -216,6 +223,7 @@ const App: React.FC = () => {
               priorities={priorities}
               statuses={statuses}
               onQuickUpdate={handleQuickUpdate}
+              products={products}
             />
           )}
         </main>
@@ -227,6 +235,7 @@ const App: React.FC = () => {
           members={members}
           priorities={priorities}
           statuses={statuses}
+          products={products}
         />
         <TaskDetailModal
           isOpen={isTaskDetailOpen}
@@ -235,6 +244,7 @@ const App: React.FC = () => {
           members={members}
           priorities={priorities}
           statuses={statuses}
+          products={products}
         />
         <ConfirmationModal
           isOpen={isDeleteModalOpen}
