@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Task, Member, Status as StatusType, Product } from '../types';
+import { Task, Member, Status as StatusType, Product, TaskType } from '../types';
 import { Priority, Timestamp } from '../services/firebase'; // Import Priority and Timestamp
 
 interface TaskListProps {
@@ -15,6 +15,7 @@ interface TaskListProps {
   statuses: StatusType[];
   onQuickUpdate?: (taskId: string, field: 'priority'|'assignee'|'status'|'startDate'|'dueDate'|'product', value: string) => void; // 新增 product
   products: Product[]; // 新增 products prop
+  taskTypes: TaskType[];
 }
 
 const RESPONSIBLE_TABS = [
@@ -37,7 +38,8 @@ const TaskList: React.FC<TaskListProps> = ({
   priorities,
   statuses,
   onQuickUpdate,
-  products
+  products,
+  taskTypes
 }) => {
   const [activeMainTab] = useState('負責人'); // 目前僅一個大頁籤
   const [activeSubTab, setActiveSubTab] = useState('all');
@@ -93,6 +95,11 @@ const TaskList: React.FC<TaskListProps> = ({
   const getStatusName = (statusId: string) => {
     const s = statuses.find(s => s.id === statusId);
     return s ? s.statusName : '-';
+  };
+
+  const getTaskTypeName = (taskTypeId: string) => {
+    const tt = taskTypes.find(tt => tt.id === taskTypeId);
+    return tt ? tt.typeName : '-';
   };
 
   // 依小頁籤篩選
@@ -416,7 +423,7 @@ const TaskList: React.FC<TaskListProps> = ({
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">
                           {getProductName(task.product)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{task.taskType}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{getTaskTypeName(task.taskType)}</td>
                         <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate hidden 2xl:table-cell" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
                         {isAdmin && (
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-3" onClick={e => e.stopPropagation()}>
@@ -616,7 +623,7 @@ const TaskList: React.FC<TaskListProps> = ({
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">
                           {getProductName(task.product)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{task.taskType}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{getTaskTypeName(task.taskType)}</td>
                         <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate hidden 2xl:table-cell" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
                         {isAdmin && (
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-3" onClick={e => e.stopPropagation()}>
@@ -731,7 +738,7 @@ const TaskList: React.FC<TaskListProps> = ({
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden lg:table-cell">
                     {getProductName(task.product)}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{task.taskType}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden xl:table-cell">{getTaskTypeName(task.taskType)}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate hidden 2xl:table-cell" title={task.notes}>{task.notes || <span className="italic text-gray-400">-</span>}</td>
                   {isAdmin && (
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-3" onClick={e => e.stopPropagation()}>

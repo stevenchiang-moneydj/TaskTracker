@@ -7,8 +7,8 @@ import ConfirmationModal from './components/ConfirmationModal';
 import LoadingSpinner from './components/LoadingSpinner';
 import TaskDetailModal from './components/TaskDetailModal';
 import { useAuth } from './hooks/useAuth';
-import { Task, Member, Status as StatusType, Product } from './types';
-import { Priority, getStatuses, getProducts } from './services/firebase';
+import { Task, Member, Status as StatusType, Product, TaskType } from './types';
+import { Priority, getStatuses, getProducts, getTaskTypes } from './services/firebase';
 import { 
   onTasksSnapshot, 
   createTask as apiCreateTask, 
@@ -26,6 +26,7 @@ const App: React.FC = () => {
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [statuses, setStatuses] = useState<StatusType[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -76,6 +77,10 @@ const App: React.FC = () => {
     getProducts().then(setProducts).catch(err => {
       console.error('載入產品失敗', err);
       setProducts([]);
+    });
+    getTaskTypes().then(setTaskTypes).catch(err => {
+      console.error('載入任務類型失敗', err);
+      setTaskTypes([]);
     });
 
     return () => {
@@ -222,6 +227,7 @@ const App: React.FC = () => {
               onViewDetail={(task) => { setSelectedTask(task); setIsTaskDetailOpen(true); }}
               priorities={priorities}
               statuses={statuses}
+              taskTypes={taskTypes}
               onQuickUpdate={handleQuickUpdate}
               products={products}
             />
@@ -236,6 +242,7 @@ const App: React.FC = () => {
           priorities={priorities}
           statuses={statuses}
           products={products}
+          taskTypes={taskTypes}
         />
         <TaskDetailModal
           isOpen={isTaskDetailOpen}
@@ -245,6 +252,7 @@ const App: React.FC = () => {
           priorities={priorities}
           statuses={statuses}
           products={products}
+          taskTypes={taskTypes}
         />
         <ConfirmationModal
           isOpen={isDeleteModalOpen}

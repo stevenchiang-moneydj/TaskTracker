@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Task, Status as StatusType, Product, TaskType, Member } from '../types';
 import { Timestamp, Priority } from '../services/firebase';
-import { TASK_TYPE_OPTIONS } from '../constants';
 
 interface TaskFormProps {
   isOpen: boolean;
@@ -12,9 +11,10 @@ interface TaskFormProps {
   priorities: Priority[];
   statuses: StatusType[];
   products: Product[];
+  taskTypes: TaskType[];
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialTask, members, priorities, statuses, products }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialTask, members, priorities, statuses, products, taskTypes }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [gitIssueUrl, setGitIssueUrl] = useState('');
@@ -24,7 +24,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
   const [priority, setPriority] = useState<string>('');
   const [status, setStatus] = useState<string>('');
   const [product, setProduct] = useState<string>('');
-  const [taskType, setTaskType] = useState<TaskType>(TaskType.SPEC);
+  const [taskType, setTaskType] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +40,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
       setPriority(initialTask.priority || '');
       setStatus(initialTask.status || (statuses[0]?.id || ''));
       setProduct(initialTask.product || (products[0]?.id || ''));
-      setTaskType(initialTask.taskType);
+      setTaskType(initialTask.taskType || (taskTypes[0]?.id || ''));
       setNotes(initialTask.notes || '');
     } else {
       // Reset form for new task
@@ -57,11 +57,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
       const defaultStatus = statuses.find(s => s.statusName === '待安排');
       setStatus(defaultStatus ? defaultStatus.id : (statuses[0]?.id || ''));
       setProduct(products[0]?.id || '');
-      setTaskType(TaskType.SPEC);
+      setTaskType(taskTypes[0]?.id || '');
       setNotes('');
     }
     setError(null); // Clear previous errors when form opens or initialTask changes
-  }, [initialTask, isOpen, priorities, statuses, products]);
+  }, [initialTask, isOpen, priorities, statuses, products, taskTypes]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,8 +201,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose, onSubmit, initialT
             </div>
             <div>
               <label htmlFor="taskType" className={labelClass}>任務類型 <span className="text-red-500">*</span></label>
-              <select id="taskType" value={taskType} onChange={(e) => setTaskType(e.target.value as TaskType)} className={inputClass}>
-                {TASK_TYPE_OPTIONS.map(tt => <option key={tt} value={tt}>{tt}</option>)}
+              <select id="taskType" value={taskType} onChange={e => setTaskType(e.target.value)} className={inputClass} required>
+                {taskTypes.sort((a, b) => Number(a.typeNumber) - Number(b.typeNumber)).map(tt => (
+                  <option key={tt.id} value={tt.id}>{tt.typeName}</option>
+                ))}
               </select>
             </div>
           </div>

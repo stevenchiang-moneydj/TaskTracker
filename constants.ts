@@ -1,4 +1,4 @@
-import { TaskType } from './types';
+import { /* TaskType */ } from './types';
 
 export const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBWaGYQIE58c4F8FhWWQI50eNYXkmKVT2c", // This should ideally be in environment variables
@@ -15,6 +15,6 @@ export const FIREBASE_CONFIG = {
 
 // export const PRIORITY_OPTIONS = [Priority.HIGH, Priority.MEDIUM, Priority.LOW]; // 已移除，改用 getPriorities 取得
 // export const STATUS_OPTIONS = [Status.TO_BE_ARRANGED, Status.IN_PROGRESS, Status.TESTING, Status.TO_MERGE, Status.DONE]; // 已移除，改用 getStatuses 取得
-export const TASK_TYPE_OPTIONS = [TaskType.SPEC, TaskType.BUG, TaskType.GENERAL_TEST, TaskType.DOCUMENT, TaskType.CUSTOMER_SUPPORT];
+// export const TASK_TYPE_OPTIONS = [TaskType.SPEC, TaskType.BUG, TaskType.GENERAL_TEST, TaskType.DOCUMENT, TaskType.CUSTOMER_SUPPORT];
 
 export const APP_TITLE = "團隊任務追蹤器";
