@@ -13,6 +13,7 @@ interface TaskListProps {
   onViewDetail: (task: Task) => void;
   priorities: Priority[]; // 新增 prop
   statuses: StatusType[];
+  onQuickUpdate?: (taskId: string, field: 'priority'|'assignee'|'status', value: string) => void; // 新增
 }
 
 const RESPONSIBLE_TABS = [
@@ -33,11 +34,15 @@ const TaskList: React.FC<TaskListProps> = ({
   isAdmin,
   onViewDetail,
   priorities,
-  statuses
+  statuses,
+  onQuickUpdate
 }) => {
   const [activeMainTab] = useState('負責人'); // 目前僅一個大頁籤
   const [activeSubTab, setActiveSubTab] = useState('all');
   const [hideDone, setHideDone] = useState(false);
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<{taskId: string, field: 'priority'|'assignee'|'status'}|null>(null);
+  const [updatingTaskId, setUpdatingTaskId] = useState<string|null>(null);
 
   const formatDate = (timestamp?: Timestamp | null): string => { // Use imported Timestamp type
     if (!timestamp) return '-';
@@ -142,6 +147,21 @@ const TaskList: React.FC<TaskListProps> = ({
     </thead>
   );
 
+  // 快速更新任務欄位
+  const handleQuickUpdate = (task: Task, field: 'priority'|'assignee'|'status', value: string) => {
+    // 只更新該欄位，不觸發編輯 modal
+    if (onQuickUpdate) {
+      if (field === 'priority' && value !== task.priority) {
+        onQuickUpdate(task.id!, 'priority', value);
+      } else if (field === 'assignee' && value !== (task.assigneeId || '')) {
+        onQuickUpdate(task.id!, 'assignee', value);
+      } else if (field === 'status' && value !== task.status) {
+        onQuickUpdate(task.id!, 'status', value);
+      }
+    }
+    setEditingField(null);
+  };
+
   if (!priorities || priorities.length === 0) {
     return <div className="text-gray-500 text-center py-8">載入優先級資料中...</div>;
   }
@@ -188,7 +208,10 @@ const TaskList: React.FC<TaskListProps> = ({
                   <TableHeader isAdmin={isAdmin} />
                   <tbody className="bg-white divide-y divide-gray-200">
                     {group.tasks.map((task) => (
-                      <tr key={task.id} className="hover:bg-blue-50 cursor-pointer transition-colors duration-150" onClick={() => onViewDetail(task)}>
+                      <tr key={task.id}
+                          className="hover:bg-blue-50 cursor-pointer transition-colors duration-150"
+                          onContextMenu={e => { e.preventDefault(); onViewDetail(task); }}
+                      >
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-medium" onClick={e => e.stopPropagation()}>
                           {task.gitIssueUrl ? (
                             <a href={task.gitIssueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">
@@ -199,11 +222,94 @@ const TaskList: React.FC<TaskListProps> = ({
                           )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(task.priority)}`}>{getPriorityName(task.priority)}</span>
+                          {editingField && editingField.taskId === task.id && editingField.field === 'priority' ? (
+                            <select
+                              className={`ml-1 text-xs px-2 py-1 rounded ${getPriorityClass(task.priority)}`}
+                              value={task.priority}
+                              onChange={e => handleQuickUpdate(task, 'priority', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            >
+                              {priorities.map(p => (
+                                <option key={p.id} value={p.id} className={getPriorityClass(p.id)}>{p.levelName}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(task.priority)} ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                              onClick={isAdmin ? (e) => {
+                                e.stopPropagation();
+                                setEditingField({taskId: task.id!, field: 'priority'});
+                                setTimeout(() => {
+                                  const select = document.getElementById(`priority-select-${task.id}`) as HTMLSelectElement;
+                                  if (select) select.focus();
+                                }, 0);
+                              } : undefined}
+                            >
+                              {getPriorityName(task.priority)}
+                            </span>
+                          )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                          {editingField && editingField.taskId === task.id && editingField.field === 'assignee' ? (
+                            <select
+                              id={`assignee-select-${task.id}`}
+                              className="ml-1 text-xs px-2 py-1 rounded bg-white border border-gray-300"
+                              value={task.assigneeId || ''}
+                              onChange={e => handleQuickUpdate(task, 'assignee', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            >
+                              <option value="">未分配</option>
+                              {members.map(m => (
+                                <option key={m.id} value={m.id}>{m.displayName}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                              onClick={isAdmin ? (e) => {
+                                e.stopPropagation();
+                                setEditingField({taskId: task.id!, field: 'assignee'});
+                                setTimeout(() => {
+                                  const select = document.getElementById(`assignee-select-${task.id}`) as HTMLSelectElement;
+                                  if (select) select.focus();
+                                }, 0);
+                              } : undefined}
+                            >
+                              {task.assigneeName || <span className="italic text-gray-500">未分配</span>}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{getStatusName(task.status)}</span>
+                          {editingField && editingField.taskId === task.id && editingField.field === 'status' ? (
+                            <select
+                              id={`status-select-${task.id}`}
+                              className={`ml-1 text-xs px-2 py-1 rounded ${getStatusClass(task.status)}`}
+                              value={task.status}
+                              onChange={e => handleQuickUpdate(task, 'status', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            >
+                              {statuses.map(s => (
+                                <option key={s.id} value={s.id} className={getStatusClass(s.id)}>{s.statusName}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)} ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                              onClick={isAdmin ? (e) => {
+                                e.stopPropagation();
+                                setEditingField({taskId: task.id!, field: 'status'});
+                                setTimeout(() => {
+                                  const select = document.getElementById(`status-select-${task.id}`) as HTMLSelectElement;
+                                  if (select) select.focus();
+                                }, 0);
+                              } : undefined}
+                            >
+                              {getStatusName(task.status)}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
@@ -236,7 +342,8 @@ const TaskList: React.FC<TaskListProps> = ({
                   <TableHeader isAdmin={isAdmin} />
                   <tbody className="bg-white divide-y divide-gray-200">
                     {unassignedTasks.map((task) => (
-                      <tr key={task.id} className="hover:bg-blue-50 cursor-pointer transition-colors duration-150" onClick={() => onViewDetail(task)}>
+                      <tr key={task.id} className="hover:bg-blue-50 cursor-pointer transition-colors duration-150"
+                          onContextMenu={e => { e.preventDefault(); onViewDetail(task); }}>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-medium" onClick={e => e.stopPropagation()}>
                           {task.gitIssueUrl ? (
                             <a href={task.gitIssueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">
@@ -247,11 +354,95 @@ const TaskList: React.FC<TaskListProps> = ({
                           )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(task.priority)}`}>{getPriorityName(task.priority)}</span>
+                          {editingField && editingField.taskId === task.id && editingField.field === 'priority' ? (
+                            <select
+                              id={`priority-select-${task.id}`}
+                              className={`ml-1 text-xs px-2 py-1 rounded ${getPriorityClass(task.priority)}`}
+                              value={task.priority}
+                              onChange={e => handleQuickUpdate(task, 'priority', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            >
+                              {priorities.map(p => (
+                                <option key={p.id} value={p.id} className={getPriorityClass(p.id)}>{p.levelName}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(task.priority)} ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                              onClick={isAdmin ? (e) => {
+                                e.stopPropagation();
+                                setEditingField({taskId: task.id!, field: 'priority'});
+                                setTimeout(() => {
+                                  const select = document.getElementById(`priority-select-${task.id}`) as HTMLSelectElement;
+                                  if (select) select.focus();
+                                }, 0);
+                              } : undefined}
+                            >
+                              {getPriorityName(task.priority)}
+                            </span>
+                          )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                          {editingField && editingField.taskId === task.id && editingField.field === 'assignee' ? (
+                            <select
+                              id={`assignee-select-${task.id}`}
+                              className="ml-1 text-xs px-2 py-1 rounded bg-white border border-gray-300"
+                              value={task.assigneeId || ''}
+                              onChange={e => handleQuickUpdate(task, 'assignee', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            >
+                              <option value="">未分配</option>
+                              {members.map(m => (
+                                <option key={m.id} value={m.id}>{m.displayName}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                              onClick={isAdmin ? (e) => {
+                                e.stopPropagation();
+                                setEditingField({taskId: task.id!, field: 'assignee'});
+                                setTimeout(() => {
+                                  const select = document.getElementById(`assignee-select-${task.id}`) as HTMLSelectElement;
+                                  if (select) select.focus();
+                                }, 0);
+                              } : undefined}
+                            >
+                              {task.assigneeName || <span className="italic text-gray-500">未分配</span>}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{getStatusName(task.status)}</span>
+                          {editingField && editingField.taskId === task.id && editingField.field === 'status' ? (
+                            <select
+                              id={`status-select-${task.id}`}
+                              className={`ml-1 text-xs px-2 py-1 rounded ${getStatusClass(task.status)}`}
+                              value={task.status}
+                              onChange={e => handleQuickUpdate(task, 'status', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              autoFocus
+                            >
+                              {statuses.map(s => (
+                                <option key={s.id} value={s.id} className={getStatusClass(s.id)}>{s.statusName}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)} ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                              onClick={isAdmin ? (e) => {
+                                e.stopPropagation();
+                                setEditingField({taskId: task.id!, field: 'status'});
+                                setTimeout(() => {
+                                  const select = document.getElementById(`status-select-${task.id}`) as HTMLSelectElement;
+                                  if (select) select.focus();
+                                }, 0);
+                              } : undefined}
+                            >
+                              {getStatusName(task.status)}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">{formatDate(task.startDate)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">{formatDate(task.dueDate)}</td>
@@ -283,7 +474,8 @@ const TaskList: React.FC<TaskListProps> = ({
             <TableHeader isAdmin={isAdmin} />
             <tbody className="bg-white divide-y divide-gray-200">
               {displayTasks.map((task) => (
-                <tr key={task.id} className="hover:bg-blue-50 cursor-pointer transition-colors duration-150" onClick={() => onViewDetail(task)}>
+                <tr key={task.id} className="hover:bg-blue-50 cursor-pointer transition-colors duration-150"
+                    onContextMenu={e => { e.preventDefault(); onViewDetail(task); }}>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-medium" onClick={e => e.stopPropagation()}>
                     {task.gitIssueUrl ? (
                       <a href={task.gitIssueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">
