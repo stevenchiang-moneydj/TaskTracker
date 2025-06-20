@@ -19,12 +19,10 @@ export interface Product {
   productNumber: number;
 }
 
-export enum TaskType {
-  SPEC = "Spec",
-  BUG = "Bug",
-  GENERAL_TEST = "普測",
-  DOCUMENT = "文件",
-  CUSTOMER_SUPPORT = "客服信件",
+export interface TaskType {
+  id: string; // documentId
+  typeName: string;
+  typeNumber: number;
 }
 
 export interface Member {
@@ -44,7 +42,7 @@ export interface Task {
   priority: string; // priorityId
   status: string; // statusId
   product: string; // productId
-  taskType: TaskType;
+  taskType: string; // taskTypeId
   notes?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;

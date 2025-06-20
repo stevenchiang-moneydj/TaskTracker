@@ -22,7 +22,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { FIREBASE_CONFIG } from '../constants';
-import { Task, Member, FirebaseUser, Status, Product } from '../types'; // 加入 Product
+import { Task, Member, FirebaseUser, Status, Product, TaskType } from '../types'; // 加入 TaskType
 
 const firebaseApp = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(firebaseApp);
@@ -116,7 +116,16 @@ export const getProducts = async (): Promise<Product[]> => {
   }));
 };
 
-// 定義 TaskInput 型別，priority/status/product 均為 id
+// 取得所有任務類型，依 taskTypeNumber 排序
+export const getTaskTypes = async (): Promise<TaskType[]> => {
+  const taskTypeSnapshot = await getDocs(query(collection(db, 'taskType'), orderBy('typeNumber', 'asc')));
+  return taskTypeSnapshot.docs.map(docSnap => ({
+    id: docSnap.id,
+    ...(docSnap.data() as Omit<TaskType, 'id'>)
+  }));
+};
+
+// 定義 TaskInput 型別，priority/status/product/taskType 均為 id
 export type TaskInput = {
   title: string;
   description?: string;
@@ -125,9 +134,9 @@ export type TaskInput = {
   startDate?: Timestamp | null;
   dueDate?: Timestamp | null;
   priority: string; // priorityId
-  status: string;   // statusId
-  product: string;  // productId
-  taskType: 'Spec' | 'Bug' | '普測' | '文件' | '客服信件';
+  status: string; // statusId
+  product: string; // productId
+  taskType: string; // taskTypeId
   notes?: string;
 };
 
