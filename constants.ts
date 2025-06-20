@@ -17,4 +17,4 @@ export const FIREBASE_CONFIG = {
 // export const STATUS_OPTIONS = [Status.TO_BE_ARRANGED, Status.IN_PROGRESS, Status.TESTING, Status.TO_MERGE, Status.DONE]; // 已移除，改用 getStatuses 取得
 // export const TASK_TYPE_OPTIONS = [TaskType.SPEC, TaskType.BUG, TaskType.GENERAL_TEST, TaskType.DOCUMENT, TaskType.CUSTOMER_SUPPORT];
 
-export const APP_TITLE = "團隊任務追蹤器";
+export const APP_TITLE = "工作追蹤";

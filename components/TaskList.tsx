@@ -692,11 +692,94 @@ const TaskList: React.FC<TaskListProps> = ({
                     )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(task.priority)}`}>{getPriorityName(task.priority)}</span>
+                    {editingField && editingField.taskId === task.id && editingField.field === 'priority' ? (
+                      <select
+                        className={`ml-1 text-xs px-2 py-1 rounded ${getPriorityClass(task.priority)}`}
+                        value={task.priority}
+                        onChange={e => handleQuickUpdate(task, 'priority', e.target.value)}
+                        onBlur={() => setEditingField(null)}
+                        autoFocus
+                      >
+                        {priorities.map(p => (
+                          <option key={p.id} value={p.id} className={getPriorityClass(p.id)}>{p.levelName}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span
+                        className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(task.priority)} ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                        onClick={isAdmin ? (e) => {
+                          e.stopPropagation();
+                          setEditingField({taskId: task.id!, field: 'priority'});
+                          setTimeout(() => {
+                            const select = document.getElementById(`priority-select-${task.id}`) as HTMLSelectElement;
+                            if (select) select.focus();
+                          }, 0);
+                        } : undefined}
+                      >
+                        {getPriorityName(task.priority)}
+                      </span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{task.assigneeName || <span className="italic text-gray-500">未分配</span>}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {editingField && editingField.taskId === task.id && editingField.field === 'assignee' ? (
+                      <select
+                        id={`assignee-select-${task.id}`}
+                        className="ml-1 text-xs px-2 py-1 rounded bg-white border border-gray-300"
+                        value={task.assigneeId || ''}
+                        onChange={e => handleQuickUpdate(task, 'assignee', e.target.value)}
+                        onBlur={() => setEditingField(null)}
+                        autoFocus
+                      >
+                        <option value="">未分配</option>
+                        {members.map(m => (
+                          <option key={m.id} value={m.id}>{m.displayName}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span
+                        className={`${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                        onClick={isAdmin ? (e) => {
+                          e.stopPropagation();
+                          setEditingField({taskId: task.id!, field: 'assignee'});
+                          setTimeout(() => {
+                            const select = document.getElementById(`assignee-select-${task.id}`) as HTMLSelectElement;
+                            if (select) select.focus();
+                          }, 0);
+                        } : undefined}
+                      >
+                        {task.assigneeName || <span className="italic text-gray-500">未分配</span>}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)}`}>{getStatusName(task.status)}</span>
+                    {editingField && editingField.taskId === task.id && editingField.field === 'status' ? (
+                      <select
+                        id={`status-select-${task.id}`}
+                        className={`ml-1 text-xs px-2 py-1 rounded ${getStatusClass(task.status)}`}
+                        value={task.status}
+                        onChange={e => handleQuickUpdate(task, 'status', e.target.value)}
+                        onBlur={() => setEditingField(null)}
+                        autoFocus
+                      >
+                        {statuses.map(s => (
+                          <option key={s.id} value={s.id} className={getStatusClass(s.id)}>{s.statusName}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span
+                        className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(task.status)} ${isAdmin ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                        onClick={isAdmin ? (e) => {
+                          e.stopPropagation();
+                          setEditingField({taskId: task.id!, field: 'status'});
+                          setTimeout(() => {
+                            const select = document.getElementById(`status-select-${task.id}`) as HTMLSelectElement;
+                            if (select) select.focus();
+                          }, 0);
+                        } : undefined}
+                      >
+                        {getStatusName(task.status)}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">
                     {isAdmin && editingField && editingField.taskId === task.id && editingField.field === 'startDate' ? (
