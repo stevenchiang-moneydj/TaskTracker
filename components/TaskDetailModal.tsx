@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Task, Member } from '../types';
+import { Priority } from '../services/firebase';
 
 interface TaskDetailModalProps {
   isOpen: boolean;
   task: Task | null;
   onClose: () => void;
   members: Member[];
+  priorities: Priority[]; // 新增 prop
 }
 
-const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, task, onClose, members }) => {
+const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, task, onClose, members, priorities }) => {
   if (!isOpen || !task) return null;
   const assignee = members.find(m => m.id === task.assigneeId);
+  const priorityObj = useMemo(() => priorities.find(p => p.id === task.priority), [priorities, task.priority]);
 
   return (
     <div
@@ -36,7 +39,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, task, onClose
           <div><span className="font-semibold">負責人：</span>{assignee ? assignee.displayName : (task.assigneeId ? '未知用戶' : '未分配')}</div>
           <div><span className="font-semibold">開始日期：</span>{task.startDate ? task.startDate.toDate().toLocaleDateString() : '-'}</div>
           <div><span className="font-semibold">截止日期：</span>{task.dueDate ? task.dueDate.toDate().toLocaleDateString() : '-'}</div>
-          <div><span className="font-semibold">優先級：</span>{task.priority}</div>
+          <div><span className="font-semibold">優先級：</span>{priorityObj ? priorityObj.levelName : '-'}</div>
           <div><span className="font-semibold">狀態：</span>{task.status}</div>
           <div><span className="font-semibold">產品：</span>{task.product}</div>
           <div><span className="font-semibold">任務類型：</span>{task.taskType}</div>
