@@ -15,7 +15,8 @@ import {
   updateTask as apiUpdateTask, 
   deleteTask as apiDeleteTask,
   getMembers,
-  getPriorities
+  getPriorities,
+  Timestamp // <--- 加入 Timestamp
 } from './services/firebase';
 
 const App: React.FC = () => {
@@ -146,20 +147,32 @@ const App: React.FC = () => {
   };
 
   // 快速欄位即時更新（不開啟 modal）
-  const handleQuickUpdate = async (taskId: string, field: 'priority'|'assignee'|'status', value: string) => {
+  const handleQuickUpdate = async (
+    taskId: string,
+    field: 'priority'|'assignee'|'status'|'startDate'|'dueDate',
+    value: string
+  ) => {
     setError(null);
     try {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
-      // 以原本的 task 為基礎，僅覆蓋要變更的欄位，避免欄位被清空
       let update: Partial<Task> = {
         priority: task.priority,
         assigneeId: task.assigneeId,
         status: task.status,
+        startDate: task.startDate,
+        dueDate: task.dueDate,
       };
       if (field === 'priority') update.priority = value;
       if (field === 'assignee') update.assigneeId = value;
       if (field === 'status') update.status = value;
+      if (field === 'startDate') {
+        // value 為 'YYYY-MM-DD'，需轉為 Timestamp
+        update.startDate = value ? Timestamp.fromDate(new Date(value)) : null;
+      }
+      if (field === 'dueDate') {
+        update.dueDate = value ? Timestamp.fromDate(new Date(value)) : null;
+      }
       await apiUpdateTask(taskId, update);
     } catch (err) {
       console.error('快速更新任務失敗', err);
